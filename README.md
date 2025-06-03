@@ -12,24 +12,19 @@ A Cloudflare Worker that provides detailed weather reports for Mission Peak trai
 
 ## Setup
 
-1. Install Wrangler CLI:
+1. Login to Cloudflare:
 ```bash
-npm install -g wrangler
+npx wrangler login
 ```
 
-2. Login to Cloudflare:
+2. Set up your secrets:
 ```bash
-wrangler login
+npx wrangler secret put SLACK_WEBHOOK_URL
 ```
 
-3. Set up your secrets:
+3. Deploy the worker:
 ```bash
-wrangler secret put SLACK_WEBHOOK_URL
-```
-
-4. Deploy the worker:
-```bash
-wrangler deploy
+npx wrangler deploy
 ```
 
 ## Configuration
@@ -75,7 +70,7 @@ SLACK_WEBHOOK_URL=your_slack_webhook_url_here
 
 2. Start the development server:
 ```bash
-wrangler dev
+npx wrangler dev
 ```
 
 3. Test the worker by visiting:
