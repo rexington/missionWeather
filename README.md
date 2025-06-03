@@ -9,6 +9,7 @@ A Cloudflare Worker that provides detailed weather reports for Mission Peak trai
 - Analyzes cloud cover and marine layer conditions
 - Reports wind conditions
 - Sends formatted reports to Slack
+- Supports on-demand weather reports via Slack slash command
 
 ## Setup
 
@@ -20,12 +21,26 @@ npx wrangler login
 2. Set up your secrets:
 ```bash
 npx wrangler secret put SLACK_WEBHOOK_URL
+npx wrangler secret put SLACK_SIGNING_SECRET
 ```
 
 3. Deploy the worker:
 ```bash
 npx wrangler deploy
 ```
+
+4. Set up the Slack slash command:
+   - Go to your Slack workspace settings
+   - Navigate to "Slash Commands"
+   - Click "Create New Command"
+   - Set the following:
+     - Command: `/mission-weather`
+     - Request URL: `https://mission-weather.[your-worker-subdomain].workers.dev`
+     - Short Description: "Get current weather conditions for Mission Peak"
+   - Save the command
+   - Go to "Basic Information" in your Slack App settings
+   - Under "App Credentials", copy the "Signing Secret"
+   - Set it as the `SLACK_SIGNING_SECRET` using wrangler
 
 ## Configuration
 
@@ -53,6 +68,18 @@ Note: Cloudflare Workers cron uses a different day numbering system than standar
 - 6 = Friday
 - 7 = Saturday
 
+## Usage
+
+### Scheduled Reports
+The worker automatically sends weather reports to your configured Slack channel at 7pm/8pm PT on Monday and Wednesday nights.
+
+### On-Demand Reports
+You can request a weather report at any time using the Slack slash command:
+```
+/mission-weather
+```
+This will generate and post a current weather report to the channel.
+
 ## Testing
 
 ### Local Testing
@@ -66,6 +93,7 @@ TRAILHEAD_LAT=37.5100
 TRAILHEAD_LON=-121.8800
 TRAILHEAD_ELEVATION=0
 SLACK_WEBHOOK_URL=your_slack_webhook_url_here
+SLACK_SIGNING_SECRET=your_slack_signing_secret_here
 ```
 
 2. Start the development server:
@@ -104,6 +132,7 @@ This allows you to verify that:
 ## Required API Keys
 
 - Slack Webhook URL (create an incoming webhook in your Slack workspace)
+- Slack Signing Secret (from your Slack App's Basic Information)
 
 ## Weather Data Sources
 
