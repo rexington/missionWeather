@@ -1,0 +1,18 @@
+name = "mission-weather"
+main = "src/index.js"
+compatibility_date = "2024-03-20"
+
+[vars]
+MISSION_PEAK_SUMMIT_LAT = "37.5133"
+MISSION_PEAK_SUMMIT_LON = "-121.8800"
+MISSION_PEAK_SUMMIT_ELEVATION = "767"  # meters
+TRAILHEAD_LAT = "37.5100"
+TRAILHEAD_LON = "-121.8800"
+TRAILHEAD_ELEVATION = "0"  # meters
+
+# Add these secrets using wrangler secret put
+# OPENWEATHER_API_KEY
+# SLACK_WEBHOOK_URL
+
+[triggers]
+crons = ["0 3 * * 2,4"] # 8pm PT (3am UTC) on Monday and Wednesday 
