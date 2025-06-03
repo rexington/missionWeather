@@ -15,4 +15,4 @@ TRAILHEAD_ELEVATION = "0"  # meters
 # SLACK_WEBHOOK_URL
 
 [triggers]
-crons = ["0 3 * * 2,4"] # 8pm PT (3am UTC) on Monday and Wednesday 
+crons = ["0 3 * * 2,4"] # 8pm PT (3am UTC) on Monday (2) and Wednesday (4) 

@@ -34,7 +34,29 @@ wrangler deploy
 
 ## Configuration
 
-The worker is configured to run at 8pm PT (3am UTC) on Monday and Wednesday nights, providing weather reports for the next morning's run.
+The worker is configured to run at 8pm PT on Monday and Wednesday nights, providing weather reports for the next morning's run.
+
+### Schedule and Timezone Handling
+
+The worker is scheduled to run at 3am UTC on Monday and Wednesday. This ensures it runs at 8pm PT regardless of daylight savings time:
+
+- During Pacific Standard Time (PST, November-March):
+  - 3am UTC = 7pm PT (UTC-8)
+- During Pacific Daylight Time (PDT, March-November):
+  - 3am UTC = 8pm PT (UTC-7)
+
+To maintain a consistent 8pm PT runtime year-round, we would need to adjust the schedule twice a year. For simplicity, the worker is scheduled to run at 3am UTC, which means:
+- During PST: Reports will be sent at 7pm PT
+- During PDT: Reports will be sent at 8pm PT
+
+Note: Cloudflare Workers cron uses a different day numbering system than standard cron:
+- 1 = Sunday
+- 2 = Monday
+- 3 = Tuesday
+- 4 = Wednesday
+- 5 = Thursday
+- 6 = Friday
+- 7 = Saturday
 
 ## Testing
 
