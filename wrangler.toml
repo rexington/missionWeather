@@ -16,4 +16,4 @@ TRAILHEAD_ELEVATION = "0"  # meters
 # SLACK_VERIFICATION_TOKEN
 
 [triggers]
-crons = ["0 3 * * 2,4"] # 8pm PT (3am UTC) on Monday (2) and Wednesday (4) 
+crons = ["0 3 * * 3,5"] # 8pm Mon/Wed (PT) 0300 UTC Tue/Thu
