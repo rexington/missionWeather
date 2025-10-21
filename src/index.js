@@ -322,9 +322,8 @@ async function generateWeatherReport(env, targetHour = 5) {
     `*Summit Conditions:*\n` +
     `• Temperature: ${summitTemp}°F, Humidity: ${summitMorning.humidity}%\n` +
     `• Wind: ${formatWindSpeed(summitMorning.windSpeed)} from ${getWindDirection(summitMorning.windDirection)}\n` +
-    `• Chance of Rain: ${summitMorning.precipitationProbability}%\n\n` +
+    `• Chance of Rain: ${summitMorning.precipitationProbability}%\n` +
     airQualityLine +
-    `*Special Conditions:*\n` +
     `• Marine Layer: ${marineLayerText}\n` +
     `• Temperature Inversion: ${hasInversion ? 'Yes' : 'No'}\n\n` +
     `*Run Planning:*\n` +
