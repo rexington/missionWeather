@@ -239,7 +239,7 @@ function getGloveRecommendation(trailheadTemp, summitTemp) {
   const avgTemp = (trailheadTemp + summitTemp) / 2;
   if (avgTemp < 40) return "Yes, definitely";
   if (avgTemp < 45) return "Yes, recommended";
-  if (avgTemp < 50) return "Maybe, if you run cold";
+  if (avgTemp < 52) return "Maybe, if you run cold";
   return "No";
 }
 
@@ -322,7 +322,7 @@ async function generateWeatherReport(env, targetHour = 5) {
     `*Summit Conditions:*\n` +
     `• Temperature: ${summitTemp}°F, Humidity: ${summitMorning.humidity}%\n` +
     `• Wind: ${formatWindSpeed(summitMorning.windSpeed)} from ${getWindDirection(summitMorning.windDirection)}\n` +
-    `• Chance of Rain: ${summitMorning.precipitationProbability}%\n` +
+    `• Chance of Rain: ${summitMorning.precipitationProbability}%\n\n` +
     airQualityLine +
     `*Special Conditions:*\n` +
     `• Marine Layer: ${marineLayerText}\n` +
