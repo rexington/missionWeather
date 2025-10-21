@@ -10,7 +10,7 @@ async function fetchWeatherData(lat, lon, elevation) {
       latitude: lat,
       longitude: lon,
       elevation: elevation,
-      hourly: 'temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation_probability,shortwave_radiation',
+      hourly: 'temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation_probability,shortwave_radiation,cape',
       timezone: 'America/Los_Angeles',
       temperature_unit: 'fahrenheit'
     });
@@ -96,7 +96,8 @@ function getNextMorningData(hourlyData, targetHour = 5) {
     midClouds: hourlyData.cloud_cover_mid[index],
     highClouds: hourlyData.cloud_cover_high[index],
     precipitationProbability: hourlyData.precipitation_probability[index],
-    solarRadiation: hourlyData.shortwave_radiation[index]
+    solarRadiation: hourlyData.shortwave_radiation[index],
+    cape: hourlyData.cape[index]
   };
 }
 
@@ -243,6 +244,13 @@ function getGloveRecommendation(trailheadTemp, summitTemp) {
   return "No";
 }
 
+function getThunderstormPotential(cape) {
+  if (cape > 2500) return "High thunderstorm potential";
+  if (cape > 1500) return "Moderate thunderstorm potential";
+  if (cape > 1000) return "Low thunderstorm potential";
+  return null; // No significant thunderstorm potential
+}
+
 async function generateWeatherReport(env, targetHour = 5) {
   // Fetch weather data for both locations
   const summitData = await fetchWeatherData(
@@ -313,20 +321,26 @@ async function generateWeatherReport(env, targetHour = 5) {
   const airQualityLine = summitAQIndex > 100 ? 
     `• Air Quality: ${summitAQIndex} (${getAQIDescription(summitAQIndex)})\n` : '';
   
+  // Only show precipitation chance if it's above 10%
+  const precipitationLine = summitMorning.precipitationProbability > 10 ?
+    `• Chance of Rain: ${summitMorning.precipitationProbability}%\n` : '';
+  
+  // Check for thunderstorm potential using CAPE
+  const thunderstormPotential = getThunderstormPotential(summitMorning.cape);
+  const thunderstormLine = thunderstormPotential ? 
+    `• ${thunderstormPotential}\n` : '';
+  
   // Marine layer likelihood instead of yes/no
   const marineLayerText = cloudAnalysis.marineLayer ? 'Likely' : 'Unlikely';
   
   return `🌄 *Mission Peak Weather Report for ${timeStr}* 🌄\n\n` +
-    `*Trailhead Conditions:*\n` +
-    `• Temperature: ${trailheadTemp}°F, Humidity: ${trailheadMorning.humidity}%\n\n` +
-    `*Summit Conditions:*\n` +
-    `• Temperature: ${summitTemp}°F, Humidity: ${summitMorning.humidity}%\n` +
+    `• Temperature: ${trailheadTemp}°F, Humidity: ${trailheadMorning.humidity}%\n` +
     `• Wind: ${formatWindSpeed(summitMorning.windSpeed)} from ${getWindDirection(summitMorning.windDirection)}\n` +
-    `• Chance of Rain: ${summitMorning.precipitationProbability}%\n` +
+    precipitationLine +
+    thunderstormLine +
     airQualityLine +
     `• Marine Layer: ${marineLayerText}\n` +
-    `• Temperature Inversion: ${hasInversion ? 'Yes' : 'No'}\n\n` +
-    `*Run Planning:*\n` +
+    `• Temperature Inversion: ${hasInversion ? 'Yes' : 'No'}\n` +
     `• Estimated Sweat Loss: ${sweatEstimate.liters}L\n` +
     `• Gloves Needed: ${getGloveRecommendation(trailheadTemp, summitTemp)}\n\n` +
     `_Data provided by Open-Meteo API_`;
