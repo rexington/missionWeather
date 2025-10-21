@@ -309,23 +309,23 @@ async function generateWeatherReport(env, targetHour = 5) {
   
   const timeStr = targetHour === 5 ? 'Tomorrow Morning' : `Tomorrow at ${formatTime(targetHour)}`;
   
+  // Only show air quality if it's unhealthy (AQI > 100)
+  const airQualityLine = summitAQIndex > 100 ? 
+    `• Air Quality: ${summitAQIndex} (${getAQIDescription(summitAQIndex)})\n` : '';
+  
+  // Marine layer likelihood instead of yes/no
+  const marineLayerText = cloudAnalysis.marineLayer ? 'Likely' : 'Unlikely';
+  
   return `🌄 *Mission Peak Weather Report for ${timeStr}* 🌄\n\n` +
     `*Trailhead Conditions:*\n` +
-    `• Temperature: ${trailheadTemp}°F\n` +
-    `• Wind: ${formatWindSpeed(trailheadMorning.windSpeed)} from ${getWindDirection(trailheadMorning.windDirection)}\n` +
-    `• Humidity: ${trailheadMorning.humidity}%\n` +
-    `• Chance of Rain: ${trailheadMorning.precipitationProbability}%\n` +
-    `• Air Quality: ${trailheadAQIndex} (${getAQIDescription(trailheadAQIndex)})\n\n` +
+    `• Temperature: ${trailheadTemp}°F, Humidity: ${trailheadMorning.humidity}%\n\n` +
     `*Summit Conditions:*\n` +
-    `• Temperature: ${summitTemp}°F\n` +
+    `• Temperature: ${summitTemp}°F, Humidity: ${summitMorning.humidity}%\n` +
     `• Wind: ${formatWindSpeed(summitMorning.windSpeed)} from ${getWindDirection(summitMorning.windDirection)}\n` +
-    `• Humidity: ${summitMorning.humidity}%\n` +
     `• Chance of Rain: ${summitMorning.precipitationProbability}%\n` +
-    `• Air Quality: ${summitAQIndex} (${getAQIDescription(summitAQIndex)})\n\n` +
+    airQualityLine +
     `*Special Conditions:*\n` +
-    `• Cloud Cover: ${cloudAnalysis.description}\n` +
-    `• Cloud Base: ${cloudAnalysis.cloudBase}\n` +
-    `• Marine Layer: ${cloudAnalysis.marineLayer ? 'Yes' : 'No'}\n` +
+    `• Marine Layer: ${marineLayerText}\n` +
     `• Temperature Inversion: ${hasInversion ? 'Yes' : 'No'}\n\n` +
     `*Run Planning:*\n` +
     `• Estimated Sweat Loss: ${sweatEstimate.liters}L\n` +
