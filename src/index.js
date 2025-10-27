@@ -106,31 +106,6 @@ function detectInversion(trailheadTemp, summitTemp) {
   return summitTemp > trailheadTemp;
 }
 
-function analyzeCloudLayer(lowClouds, midClouds, highClouds) {
-  const marineLayer = lowClouds > 70; // Marine layer typically forms in low clouds
-  const cloudBase = lowClouds > 50 ? "Low" : midClouds > 50 ? "Mid" : highClouds > 50 ? "High" : "Clear";
-  
-  let description = "";
-  if (marineLayer) {
-    description = "Marine layer present";
-  } else if (lowClouds > 80) {
-    description = "Heavy low cloud cover";
-  } else if (midClouds > 80) {
-    description = "Heavy mid-level cloud cover";
-  } else if (highClouds > 80) {
-    description = "Heavy high cloud cover";
-  } else if (lowClouds > 50 || midClouds > 50 || highClouds > 50) {
-    description = "Moderate cloud cover";
-  } else {
-    description = "Clear skies";
-  }
-  
-  return {
-    description,
-    marineLayer,
-    cloudBase
-  };
-}
 
 function formatWindSpeed(speed) {
   if (speed < 5) return "Calm";
@@ -300,11 +275,6 @@ async function generateWeatherReport(env, targetHour = 5) {
   const summitTemp = Math.round(summitMorning.temperature);
   const trailheadTemp = Math.round(trailheadMorning.temperature);
   const hasInversion = detectInversion(trailheadTemp, summitTemp);
-  const cloudAnalysis = analyzeCloudLayer(
-    summitMorning.lowClouds,
-    summitMorning.midClouds,
-    summitMorning.highClouds
-  );
   
   // Calculate estimated sweat loss
   const sweatEstimate = estimateSweatLoss(
@@ -330,16 +300,13 @@ async function generateWeatherReport(env, targetHour = 5) {
   const thunderstormLine = thunderstormPotential ? 
     `• ${thunderstormPotential}\n` : '';
   
-  // Marine layer likelihood instead of yes/no
-  const marineLayerText = cloudAnalysis.marineLayer ? 'Likely' : 'Unlikely';
-  
   return `🌄 *Mission Peak Weather Report for ${timeStr}* 🌄\n\n` +
     `• Temperature: ${trailheadTemp}°F, Humidity: ${trailheadMorning.humidity}%\n` +
     `• Wind: ${formatWindSpeed(summitMorning.windSpeed)} from ${getWindDirection(summitMorning.windDirection)}\n` +
     precipitationLine +
     thunderstormLine +
     airQualityLine +
-    `• Marine Layer: ${marineLayerText}\n` +
+    `• Cloud Cover: Low ${Math.round(summitMorning.lowClouds)}%, Mid ${Math.round(summitMorning.midClouds)}%, High ${Math.round(summitMorning.highClouds)}%\n` +
     `• Temperature Inversion: ${hasInversion ? 'Yes' : 'No'}\n` +
     `• Estimated Sweat Loss: ${sweatEstimate.liters}L\n` +
     `• Gloves Needed: ${getGloveRecommendation(trailheadTemp, summitTemp)}\n\n` +
