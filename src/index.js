@@ -10,7 +10,7 @@ async function fetchWeatherData(lat, lon, elevation) {
       latitude: lat,
       longitude: lon,
       elevation: elevation,
-      hourly: 'temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation_probability,shortwave_radiation,cape',
+      hourly: 'temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation_probability,shortwave_radiation',
       timezone: 'America/Los_Angeles',
       temperature_unit: 'fahrenheit'
     });
@@ -96,8 +96,7 @@ function getNextMorningData(hourlyData, targetHour = 5) {
     midClouds: hourlyData.cloud_cover_mid[index],
     highClouds: hourlyData.cloud_cover_high[index],
     precipitationProbability: hourlyData.precipitation_probability[index],
-    solarRadiation: hourlyData.shortwave_radiation[index],
-    cape: hourlyData.cape[index]
+    solarRadiation: hourlyData.shortwave_radiation[index]
   };
 }
 
@@ -219,12 +218,6 @@ function getGloveRecommendation(trailheadTemp, summitTemp) {
   return "No";
 }
 
-function getThunderstormPotential(cape) {
-  if (cape > 2500) return "High thunderstorm potential";
-  if (cape > 1500) return "Moderate thunderstorm potential";
-  if (cape > 1000) return "Low thunderstorm potential";
-  return null; // No significant thunderstorm potential
-}
 
 async function generateWeatherReport(env, targetHour = 5) {
   // Fetch weather data for both locations
@@ -295,16 +288,10 @@ async function generateWeatherReport(env, targetHour = 5) {
   const precipitationLine = summitMorning.precipitationProbability > 10 ?
     `• Chance of Rain: ${summitMorning.precipitationProbability}%\n` : '';
   
-  // Check for thunderstorm potential using CAPE
-  const thunderstormPotential = getThunderstormPotential(summitMorning.cape);
-  const thunderstormLine = thunderstormPotential ? 
-    `• ${thunderstormPotential}\n` : '';
-  
   return `🌄 *Mission Peak Weather Report for ${timeStr}* 🌄\n\n` +
     `• Temperature: ${trailheadTemp}°F, Humidity: ${trailheadMorning.humidity}%\n` +
     `• Wind: ${formatWindSpeed(summitMorning.windSpeed)} from ${getWindDirection(summitMorning.windDirection)}\n` +
     precipitationLine +
-    thunderstormLine +
     airQualityLine +
     `• Cloud Cover: Low ${Math.round(summitMorning.lowClouds)}%, Mid ${Math.round(summitMorning.midClouds)}%, High ${Math.round(summitMorning.highClouds)}%\n` +
     `• Temperature Inversion: ${hasInversion ? 'Yes' : 'No'}\n` +
