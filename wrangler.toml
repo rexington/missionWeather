@@ -10,6 +10,12 @@ TRAILHEAD_LAT = "37.5047"
 TRAILHEAD_LON = "-121.9079"
 TRAILHEAD_ELEVATION = "115"  # meters
 
+[observability]
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+
 # Add these secrets using wrangler secret put
 # OPENWEATHER_API_KEY
 # SLACK_WEBHOOK_URL

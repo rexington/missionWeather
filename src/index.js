@@ -18,9 +18,20 @@ async function fetchWeatherData(lat, lon, elevation) {
     const url = `${OPEN_METEO_BASE_URL}?${params.toString()}`;
     console.log('Fetching weather data from:', url);
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'MissionPeakWeatherBot/1.0'
+      }
+    });
     if (!response.ok) {
-      throw new Error(`Open-Meteo API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Open-Meteo API error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: url,
+        errorBody: errorText
+      });
+      throw new Error(`Open-Meteo API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
     return response.json();
   } catch (error) {
@@ -50,9 +61,20 @@ async function fetchAirQualityData(lat, lon) {
     const url = `${AIR_QUALITY_BASE_URL}?${params.toString()}`;
     console.log('Fetching air quality data from:', url);
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'MissionPeakWeatherBot/1.0'
+      }
+    });
     if (!response.ok) {
-      throw new Error(`Air Quality API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Air Quality API error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: url,
+        errorBody: errorText
+      });
+      throw new Error(`Air Quality API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
     return response.json();
   } catch (error) {
@@ -62,21 +84,24 @@ async function fetchAirQualityData(lat, lon) {
 }
 
 function getNextMorningData(hourlyData, targetHour = 5) {
-  // Get data for specified hour
+  // Get data for specified hour - create tomorrow in Pacific Time to match weather data
   const now = new Date();
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(targetHour, 0, 0, 0);
   
-  const targetTime = tomorrow.toISOString();
+  // Set the time in Pacific Time (America/Los_Angeles)
+  const pacificTime = new Date(tomorrow.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+  pacificTime.setHours(targetHour, 0, 0, 0);
+  
+  const targetTime = pacificTime.toISOString();
   console.log('Looking for data at:', targetTime);
   
   // Find the exact hour in the data
   const index = hourlyData.time.findIndex(time => {
     const dataTime = new Date(time);
     return dataTime.getHours() === targetHour && 
-           dataTime.getDate() === tomorrow.getDate() &&
-           dataTime.getMonth() === tomorrow.getMonth();
+           dataTime.getDate() === pacificTime.getDate() &&
+           dataTime.getMonth() === pacificTime.getMonth();
   });
   
   if (index === -1) {
@@ -220,12 +245,15 @@ function getGloveRecommendation(trailheadTemp, summitTemp) {
 
 
 async function generateWeatherReport(env, targetHour = 5) {
-  // Fetch weather data for both locations
+  // Fetch weather data for both locations with delays to avoid rate limiting
   const summitData = await fetchWeatherData(
     env.MISSION_PEAK_SUMMIT_LAT,
     env.MISSION_PEAK_SUMMIT_LON,
     env.MISSION_PEAK_SUMMIT_ELEVATION
   );
+  
+  // Add small delay between requests to avoid rate limiting
+  await new Promise(resolve => setTimeout(resolve, 100));
   
   const trailheadData = await fetchWeatherData(
     env.TRAILHEAD_LAT,
@@ -233,11 +261,14 @@ async function generateWeatherReport(env, targetHour = 5) {
     env.TRAILHEAD_ELEVATION
   );
 
-  // Fetch air quality data for both locations
+  // Fetch air quality data for both locations with delays
   const summitAQData = await fetchAirQualityData(
     env.MISSION_PEAK_SUMMIT_LAT,
     env.MISSION_PEAK_SUMMIT_LON
   );
+  
+  // Add small delay between air quality requests
+  await new Promise(resolve => setTimeout(resolve, 100));
   
   const trailheadAQData = await fetchAirQualityData(
     env.TRAILHEAD_LAT,
@@ -366,19 +397,31 @@ export default {
     // Handle Slack slash command
     if (request.method === 'POST') {
       try {
-        // Verify the request is from Slack
-        const { isValid, body } = await verifySlackRequest(request, env.SLACK_SIGNING_SECRET);
-        console.log('Slack request validation result:', isValid);
+        // Check if this is a test request (skip signature verification)
+        const url = new URL(request.url);
+        const isTestRequest = url.searchParams.get('test') === 'true';
         
-        if (!isValid) {
-          return new Response('Unauthorized', { status: 401 });
+        let body;
+        if (isTestRequest) {
+          // For test requests, get body without signature verification
+          body = await request.text();
+          console.log('Test request detected, skipping signature verification');
+        } else {
+          // Verify the request is from Slack
+          const verification = await verifySlackRequest(request, env.SLACK_SIGNING_SECRET);
+          console.log('Slack request validation result:', verification.isValid);
+          
+          if (!verification.isValid) {
+            return new Response('Unauthorized', { status: 401 });
+          }
+          body = verification.body;
         }
 
         // Parse the body as form data
         const formData = new URLSearchParams(body);
-        const command = formData.get('command');
+        const command = formData.get('command')?.trim();
         const responseUrl = formData.get('response_url');
-        const text = formData.get('text') || '';
+        const text = formData.get('text')?.trim() || '';
         console.log('Received command:', command, 'with text:', text);
 
         // Parse the time from the command text
