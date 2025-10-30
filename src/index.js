@@ -319,13 +319,13 @@ async function generateWeatherReport(env, targetHour = 5) {
   const precipitationLine = summitMorning.precipitationProbability > 10 ?
     `• Chance of Rain: ${summitMorning.precipitationProbability}%\n` : '';
   
-  return `🌄 *Mission Peak Weather Report for ${timeStr}* 🌄\n\n` +
-    `• Temperature: ${trailheadTemp}°F, Humidity: ${trailheadMorning.humidity}%\n` +
+  return `🌄 *MP Weather for ${timeStr}* 🌄\n\n` +
+    `• Temp: ${trailheadTemp}°F, Humidity: ${trailheadMorning.humidity}%\n` +
     `• Wind: ${formatWindSpeed(summitMorning.windSpeed)} from ${getWindDirection(summitMorning.windDirection)}\n` +
     precipitationLine +
     airQualityLine +
     `• Cloud Cover: Low ${Math.round(summitMorning.lowClouds)}%, Mid ${Math.round(summitMorning.midClouds)}%, High ${Math.round(summitMorning.highClouds)}%\n` +
-    `• Temperature Inversion: ${hasInversion ? 'Yes' : 'No'}\n` +
+    `• Inversion: ${hasInversion ? 'Yes' : 'No'}\n` +
     `• Estimated Sweat Loss: ${sweatEstimate.liters}L\n` +
     `• Gloves Needed: ${getGloveRecommendation(trailheadTemp, summitTemp)}\n\n` +
     `_Data provided by Open-Meteo API_`;
