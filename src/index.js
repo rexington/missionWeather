@@ -286,12 +286,11 @@ async function generateWeatherReport(env, targetHour = 5) {
     `• Chance of Rain: ${summitMorning.precipitationProbability}%\n` : '';
   
   return `🌄 *MP Weather for ${timeStr}* 🌄\n\n` +
-    `• Temp: ${trailheadTemp}°F, Humidity: ${trailheadMorning.humidity}%\n` +
+    `• Temp: ${trailheadTemp}°F base / ${summitTemp}°F summit, Humidity: ${trailheadMorning.humidity}%\n` +
     `• Wind: ${formatWindSpeed(summitMorning.windSpeed)} from ${getWindDirection(summitMorning.windDirection)}\n` +
     precipitationLine +
     airQualityLine +
     `• Cloud Cover: Low ${Math.round(summitMorning.lowClouds)}%, Mid ${Math.round(summitMorning.midClouds)}%, High ${Math.round(summitMorning.highClouds)}%\n` +
-    `• Inversion: ${hasInversion ? 'Yes' : 'No'}\n` +
     `• Sunrise: ${sunriseTime}\n` +
     `• Gloves Needed: ${getGloveRecommendation(trailheadTemp, summitTemp)}\n\n` +
     `_Data provided by Open-Meteo API_`;
