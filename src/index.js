@@ -11,6 +11,7 @@ async function fetchWeatherData(lat, lon, elevation) {
       longitude: lon,
       elevation: elevation,
       hourly: 'temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation_probability,shortwave_radiation',
+      daily: 'sunrise',
       timezone: 'America/Los_Angeles',
       temperature_unit: 'fahrenheit'
     });
@@ -177,62 +178,29 @@ async function sendToSlack(message, webhookUrl) {
   }
 }
 
-function getSunriseTime(date) {
-  // Approximate sunrise time for Mission Peak area (varies by season)
-  // Using 6:30am as average sunrise time
-  const sunrise = new Date(date);
-  sunrise.setHours(6, 30, 0, 0);
-  return sunrise;
-}
-
-function estimateSweatLoss(temperature, humidity, windSpeed, elevation, solarRadiation) {
-  // Constants
-  const WEIGHT = 180; // lbs
-  const DISTANCE = 6.22; // miles
-  const ELEVATION_GAIN = 2150; // feet
+function formatSunriseTime(sunriseTimeString) {
+  // Parse the sunrise time string (Open-Meteo returns in requested timezone)
+  // Format: "2024-01-15T14:30" - already in Pacific Time since we specified timezone
+  // Since the string doesn't include timezone, we need to parse it as Pacific Time
+  // by appending the timezone offset or using a workaround
   
-  // Estimate duration based on elevation gain and distance
-  // Using a rough formula: base pace + elevation adjustment
-  const basePace = 10; // minutes per mile
-  const elevationFactor = ELEVATION_GAIN / 1000;
-  const estimatedDuration = (basePace + elevationFactor) * DISTANCE; // in minutes
+  // Extract time portion (HH:MM) from the string
+  const timeMatch = sunriseTimeString.match(/T(\d{2}):(\d{2})/);
+  if (!timeMatch) return 'N/A';
   
-  // Base sweat rate (ml/hour) at 70°F, 50% humidity, no wind
-  const baseSweatRate = 650;
+  const hours = parseInt(timeMatch[1]);
+  const minutes = parseInt(timeMatch[2]);
   
-  // Temperature factor (increases sweat rate by ~10% per 5°F above 70°F)
-  const tempFactor = 1 + ((temperature - 70) / 5) * 0.1;
+  // Format as 12-hour time
+  let displayHours = hours;
+  const ampm = hours >= 12 ? 'pm' : 'am';
+  if (hours > 12) displayHours -= 12;
+  if (hours === 0) displayHours = 12;
   
-  // Humidity factor (increases sweat rate by ~5% per 10% above 50% humidity)
-  const humidityFactor = 1 + ((humidity - 50) / 10) * 0.05;
-  
-  // Wind factor (decreases sweat rate by ~5% per 5mph)
-  const windFactor = 1 - (windSpeed / 5) * 0.05;
-  
-  // Elevation factor (increases sweat rate by ~5% per 1000ft)
-  const elevationSweatFactor = 1 + (ELEVATION_GAIN / 1000) * 0.05;
-
-  // Solar radiation factor (W/m²)
-  // Typical values: 0 at night, up to 1000+ in full sun
-  // Scale the effect from 0 to 75% increase
-  const solarFactor = 1 + (Math.min(solarRadiation / 1000, 1) * 0.75);
-  
-  // Calculate total sweat loss
-  let sweatLoss = baseSweatRate * 
-                  tempFactor * 
-                  humidityFactor * 
-                  windFactor * 
-                  elevationSweatFactor * 
-                  solarFactor *
-                  (estimatedDuration / 60); // Convert to hours
-  
-  // Convert to liters
-  sweatLoss = sweatLoss / 1000; // Convert ml to liters
-  
-  return {
-    liters: Math.round(sweatLoss * 10) / 10, // Round to 1 decimal place
-    duration: Math.round(estimatedDuration)
-  };
+  if (minutes === 0) {
+    return `${displayHours}${ampm}`;
+  }
+  return `${displayHours}:${minutes.toString().padStart(2, '0')}${ampm}`;
 }
 
 function getGloveRecommendation(trailheadTemp, summitTemp) {
@@ -300,14 +268,12 @@ async function generateWeatherReport(env, targetHour = 5) {
   const trailheadTemp = Math.round(trailheadMorning.temperature);
   const hasInversion = detectInversion(trailheadTemp, summitTemp);
   
-  // Calculate estimated sweat loss
-  const sweatEstimate = estimateSweatLoss(
-    (trailheadTemp + summitTemp) / 2, // Average temperature
-    (trailheadMorning.humidity + summitMorning.humidity) / 2, // Average humidity
-    (trailheadMorning.windSpeed + summitMorning.windSpeed) / 2, // Average wind speed
-    2150, // Elevation gain
-    (trailheadMorning.solarRadiation + summitMorning.solarRadiation) / 2 // Average solar radiation
-  );
+  // Get sunrise time for tomorrow (reuse tomorrow variable from above)
+  const tomorrowDateStr = tomorrow.toISOString().split('T')[0]; // Format: "2024-01-15"
+  
+  // Find tomorrow's sunrise in the daily data
+  const tomorrowIndex = summitData.daily.time.findIndex(date => date === tomorrowDateStr);
+  const sunriseTime = tomorrowIndex !== -1 ? formatSunriseTime(summitData.daily.sunrise[tomorrowIndex]) : 'N/A';
   
   const timeStr = targetHour === 5 ? 'Tomorrow Morning' : `Tomorrow at ${formatTime(targetHour)}`;
   
@@ -326,7 +292,7 @@ async function generateWeatherReport(env, targetHour = 5) {
     airQualityLine +
     `• Cloud Cover: Low ${Math.round(summitMorning.lowClouds)}%, Mid ${Math.round(summitMorning.midClouds)}%, High ${Math.round(summitMorning.highClouds)}%\n` +
     `• Inversion: ${hasInversion ? 'Yes' : 'No'}\n` +
-    `• Estimated Sweat Loss: ${sweatEstimate.liters}L\n` +
+    `• Sunrise: ${sunriseTime}\n` +
     `• Gloves Needed: ${getGloveRecommendation(trailheadTemp, summitTemp)}\n\n` +
     `_Data provided by Open-Meteo API_`;
 }
