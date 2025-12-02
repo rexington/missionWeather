@@ -205,9 +205,9 @@ function formatSunriseTime(sunriseTimeString) {
 
 function getGloveRecommendation(trailheadTemp, summitTemp) {
   const avgTemp = (trailheadTemp + summitTemp) / 2;
-  if (avgTemp < 40) return "Yes, definitely";
-  if (avgTemp < 45) return "Yes, recommended";
-  if (avgTemp < 52) return "Maybe, if you run cold";
+  if (avgTemp < 43) return "Yes, it's cold!";
+  if (avgTemp < 50) return "Yes, recommended";
+  if (avgTemp < 54) return "Maybe";
   return "No";
 }
 
